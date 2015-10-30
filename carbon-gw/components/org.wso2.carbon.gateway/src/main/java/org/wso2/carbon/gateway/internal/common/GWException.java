@@ -16,18 +16,23 @@
 package org.wso2.carbon.gateway.internal.common;
 
 /**
- * Interface of the Carbon Message Processor which is used to process Carbon Messages.
+ * Custom exception class for gateway specific exceptions
  */
-public interface CarbonMessageProcessor {
+public class GWException extends Exception {
 
-    /**
-     *
-     * @param msg CarbopnMessage received for processing
-     * @param callback Callback recived from transport layer to the engine.
-     * @return void
-     * @throws Exception Exception to signal any failure at the message processor
-     */
-    boolean receive(CarbonMessage msg, CarbonCallback callback) throws Exception;
+    public GWException() {
+    }
 
+    public GWException(String message) {
+        super(message);
+    }
+
+    public GWException(Throwable cause) {
+        super(cause);
+    }
+
+    public GWException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }
