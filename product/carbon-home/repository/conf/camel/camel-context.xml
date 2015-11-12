@@ -1,19 +1,19 @@
 <!--
-  ~ /*
-  ~ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-  ~ *
-  ~ * Licensed under the Apache License, Version 2.0 (the "License");
-  ~ * you may not use this file except in compliance with the License.
-  ~ * You may obtain a copy of the License at
-  ~ *
-  ~ * http://www.apache.org/licenses/LICENSE-2.0
-  ~ *
-  ~ * Unless required by applicable law or agreed to in writing, software
-  ~ * distributed under the License is distributed on an "AS IS" BASIS,
-  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ * See the License for the specific language governing permissions and
-  ~ * limitations under the License.
-  ~ */
+  ~ Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~
+  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ Version 2.0 (the "License"); you may not use this file except
+  ~ in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
   -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -28,46 +28,91 @@ classpath:org/wso2/carbon/gateway/xml/camel-spring.xsd">
 
     <camelContext id="wso2-cc" xmlns="http://camel.apache.org/schema/spring">
 
-        <restConfiguration bindingMode="auto" component="wso2-gw" scheme="http" port="9090"/>
-
-        <!--sample rest interfaces -->
+        <restConfiguration bindingMode="auto" component="wso2-gw" port="9090"/>
         <rest path="/gw">
             <get uri="/news">
                 <to uri="direct:getNews"/>
             </get>
-            <get uri="/news/{id}">
-                <to uri="direct:getNewsById"/>
-            </get>
+            <post uri="/news">
+                <to uri="direct:postNews"/>
+            </post>
         </rest>
 
-        <!-- sample routes corresponding to the rest interfaces -->
-        <route>
-            <from uri="direct:getNews"/>
-            <to uri="wso2-gw:http://jsonplaceholder.typicode.com/posts"/>
-        </route>
-        <route>
-            <from uri="direct:getNewsById"/>
-            <recipientList>
-                <simple>wso2-gw:http://jsonplaceholder.typicode.com/posts/${header.id}</simple>
-            </recipientList>
-        </route>
+        <rest path="/pizza">
+            <get uri="/order">
+                <to uri="direct:listPizzaOrders"/>
+            </get>
+            <get uri="/order/{id}">
+                <to uri="direct:listPizzaOrder"/>
+            </get>
+            <post uri="/order/new">
+                <to uri="direct:addPizzaOrder"/>
+            </post>
+            <delete uri="/delete/{id}">
+                <to uri="direct:deletePizzaOrder"/>
+            </delete>
+        </rest>
 
-        <!-- sample routes based on http header (custom header routeId)-->
         <route id="http-routes">
             <from uri="wso2-gw:/default"/>
             <choice>
                 <when>
                     <simple>${header.routeId} regex 'r1'</simple>
-                    <to uri="wso2-gw:http://localhost:9000/services/SimpleStockQuoteService"/>
+                    <to uri="wso2-gw:http://localhost:8080/services/SimpleStockQuoteService"/>
                 </when>
                 <when>
                     <simple>${header.routeId} regex 'r2'</simple>
-                    <to uri="wso2-gw:http://localhost:9002/service/SimpleStockQuoteService"/>
+                    <to uri="wso2-gw:http://localhost:9000/service/Foo"/>
                 </when>
                 <otherwise>
-                    <to uri="wso2-gw:http://localhost:9004/SimpleStockQuoteService"/>
+                    <to uri="wso2-gw:http://localhost:9000/noservice"/>
                 </otherwise>
             </choice>
+        </route>
+
+        <route id="failover">
+            <from uri="wso2-gw:/failover"/>
+            <loadBalance>
+                <failover roundRobin="false"/>
+                <to uri="wso2-gw:http://localhost:8280/services/echoproxy"/>
+                <to uri="wso2-gw:http://localhost:8080/services/echo"/>
+            </loadBalance>
+        </route>
+
+        <route id="dynamic">
+            <from uri="wso2-gw:/dynamic"/>
+            <toD uri="wso2-gw:http://localhost:${header.testPort}/services/echo"/>
+        </route>
+
+        <route>
+            <from uri="direct:getNews"/>
+            <to uri="wso2-gw:http://jsonplaceholder.typicode.com/posts/1"/>
+        </route>
+        <route>
+            <from uri="direct:postNews"/>
+            <to uri="wso2-gw:http://jsonplaceholder.typicode.com/posts"/>
+        </route>
+
+
+        <route>
+            <from uri="direct:listPizzaOrders"/>
+            <to uri="wso2-gw:http://localhost:8080/restful-pizzashop/rest/menu/order"/>
+        </route>
+        <route>
+            <from uri="direct:listPizzaOrder"/>
+            <recipientList>
+                <simple>wso2-gw:http://localhost:8080/restful-pizzashop/rest/menu/order/${header.id}</simple>
+            </recipientList>
+        </route>
+        <route>
+            <from uri="direct:addPizzaOrder"/>
+            <to uri="wso2-gw:http://localhost:8080/restful-pizzashop/rest/menu/add"/>
+        </route>
+        <route>
+            <from uri="direct:deletePizzaOrder"/>
+            <recipientList>
+                <simple>wso2-gw:http://localhost:8080/restful-pizzashop/rest/menu/delete/${header.id}</simple>
+            </recipientList>
         </route>
 
     </camelContext>

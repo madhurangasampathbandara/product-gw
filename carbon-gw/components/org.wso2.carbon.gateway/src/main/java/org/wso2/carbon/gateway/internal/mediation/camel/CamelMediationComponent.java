@@ -56,10 +56,12 @@ public class CamelMediationComponent extends DefaultComponent implements RestCon
         return endpoint;
     }
 
-    public Consumer createConsumer(CamelContext camelContext, Processor processor,
-                                   String verb, String basePath, String uriTemplate,
-                                   String consumes, String produces, Map<String,
-            Object> parameters) throws Exception {
+    @Override
+    public Consumer createConsumer(CamelContext camelContext, Processor processor, String verb,
+                                             String basePath, String uriTemplate, String consumes, String produces,
+                                             RestConfiguration restConfiguration,
+                                             Map<String, Object> parameters) throws Exception {
+
         String scheme = "http";
 
         String url = "wso2-gw:%s://%s:%s/%s?httpMethodRestrict=%s";

@@ -73,8 +73,9 @@ public class CamelMediationProducer extends DefaultAsyncProducer {
         //This parameter is used to decide whether we need to continue processing in case of a failure (FO endpoint)
         boolean syncNeeded = true;
         try {
-            syncNeeded = engine.getSender().send(exchange.getIn().getBody(CarbonMessage.class),
-                                                 new NettyHttpBackEndCallback(exchange, callback));
+            syncNeeded = engine.getSender()
+                               .send(exchange.getProperty(MediationConstants.CARBON_MESSAGE, CarbonMessage.class),
+                                     new NettyHttpBackEndCallback(exchange, callback));
         } catch (Exception exp) {
             //Set the exception to the exchange such that camel can decide on failover
             exchange.setException(exp);
@@ -107,12 +108,14 @@ public class CamelMediationProducer extends DefaultAsyncProducer {
                 Map<String, Object> transportHeaders =
                         (Map<String, Object>) responseCmsg.getProperty(Constants.TRANSPORT_HEADERS);
                 if (transportHeaders != null) {
-                    CarbonMessage request = exchange.getIn().getBody(CarbonMessage.class);
+                    CarbonMessage request =
+                            exchange.getProperty(MediationConstants.CARBON_MESSAGE, CarbonMessage.class);
                     responseCmsg.setProperty(Constants.SRC_HNDLR, request.getProperty(Constants.SRC_HNDLR));
                     responseCmsg.setProperty(Constants.DISRUPTOR, request.getProperty(Constants.DISRUPTOR));
                     responseCmsg.setProperty(Constants.CHNL_HNDLR_CTX, request.getProperty(Constants.CHNL_HNDLR_CTX));
                     carbonCamelMessageUtil.setCamelHeadersToBackendResponse(exchange, transportHeaders);
-                    exchange.getOut().setBody(responseCmsg);
+
+                    exchange.setProperty(MediationConstants.CARBON_MESSAGE, responseCmsg);
                 } else {
                     log.warn("Backend response : Received empty headers in carbon message...");
                 }

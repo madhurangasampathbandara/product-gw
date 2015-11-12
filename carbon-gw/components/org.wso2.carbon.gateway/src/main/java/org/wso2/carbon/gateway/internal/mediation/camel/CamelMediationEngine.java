@@ -101,11 +101,19 @@ public class CamelMediationEngine implements CarbonMessageProcessor {
 
         consumer.getAsyncProcessor().process(exchange, done -> {
 
-            CarbonMessage mediatedResponse = exchange.getOut().getBody(CarbonMessage.class);
+            CarbonMessage mediatedResponse =
+                    exchange.getProperty(MediationConstants.CARBON_MESSAGE, CarbonMessage.class);
 
-            if (mediatedResponse != null && !exchange.getIn().getMessageId().equals(exchange.getOut().getMessageId())) {
-                Map<String, Object> mediatedHeaders = exchange.getOut().getHeaders();
-                mediatedResponse.setProperty(Constants.TRANSPORT_HEADERS, mediatedHeaders);
+            if (null == exchange.getException()) {
+                if (exchange.getOut().hasHeaders()) {
+                    Map<String, Object> mediatedHeaders = exchange.getOut().getHeaders();
+                    mediatedResponse.setProperty(Constants.TRANSPORT_HEADERS, mediatedHeaders);
+                } else if (exchange.getIn().hasHeaders()) {
+                    Map<String, Object> mediatedHeaders = exchange.getIn().getHeaders();
+                    mediatedResponse.setProperty(Constants.TRANSPORT_HEADERS, mediatedHeaders);
+                } else {
+                    log.info("response path mediation was not applied properly...");
+                }
             } else {
                 mediatedResponse = new CarbonMessage(Constants.PROTOCOL_NAME);
                 Exception failedCause = exchange.getException();

@@ -66,7 +66,7 @@ public class CamelMediationEndpoint extends DefaultEndpoint {
     public Exchange createExchange(Map<String, Object> headers, CarbonMessage cmsg) {
         Exchange exchange = createExchange();
         carbonCamelMessageUtil.setCamelHeadersToClientRequest(exchange, headers, cmsg);
-        exchange.getIn().setBody(cmsg);
+        exchange.setProperty(MediationConstants.CARBON_MESSAGE, cmsg);
         return exchange;
     }
 
