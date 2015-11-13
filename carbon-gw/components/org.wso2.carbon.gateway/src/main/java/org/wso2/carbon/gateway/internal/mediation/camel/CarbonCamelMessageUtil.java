@@ -20,6 +20,8 @@ package org.wso2.carbon.gateway.internal.mediation.camel;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.URISupport;
+import org.apache.camel.util.UnsafeUriCharactersEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.gateway.internal.common.CarbonMessage;
@@ -139,7 +141,11 @@ public class CarbonCamelMessageUtil {
 
             request.setHost(host);
             request.setPort(port);
-            request.setURI(uri);
+            try {
+                request.setURI(createURI(exchange, uri));
+            } catch (URISyntaxException e) {
+                log.error("Error while generating the URL for to endpoint : " + uri);
+            }
 
             Iterator it = headers.entrySet().iterator();
             while (it.hasNext()) {
@@ -169,6 +175,20 @@ public class CarbonCamelMessageUtil {
 
             request.setProperty(Constants.TRANSPORT_HEADERS, carbonBackEndRequestHeaders);
         }
+    }
+
+    private String createURI(Exchange exchange, String url) throws URISyntaxException {
+        URI uri = new URI(url);
+        String queryString = exchange.getIn().getHeader(Exchange.HTTP_QUERY, String.class);
+        if (queryString == null) {
+            queryString = uri.getRawQuery();
+        }
+        if (queryString != null) {
+            // need to encode query string
+            queryString = UnsafeUriCharactersEncoder.encodeHttpURI(queryString);
+            uri = URISupport.createURIWithQuery(uri, queryString);
+        }
+        return uri.toString();
     }
 
     /**
